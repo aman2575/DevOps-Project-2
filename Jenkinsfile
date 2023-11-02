@@ -33,21 +33,23 @@ pipeline {
                 sh "mvn test"
             }
         }
-        stage("SonarQube Analysis"){
-            steps{
-                script{
-                    withSonarQubeEnv(credentialsId: 'jenkins-sonarqube-token'){
+         stage("SonarQube Analysis"){
+           steps {
+	           script {
+		        withSonarQubeEnv(credentialsId: 'jenkins-sonarqube-token') { 
                         sh "mvn sonar:sonar"
-                    }
-                }
-            }
-        }
-        stage('Quality Gate'){
-            steps{
-                script{
+		        }
+	           }	
+           }
+       }
+
+       stage("Quality Gate"){
+           steps {
+               script {
                     waitForQualityGate abortPipeline: false, credentialsId: 'jenkins-sonarqube-token'
-                }
+                }	
             }
+
         }
         stage(" Build & Push Docker Image"){
             steps {
@@ -62,6 +64,13 @@ pipeline {
                 }
             }
         }
+         stage("Trivy Scan") {
+           steps {
+               script {
+	            sh ('docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image aman2575/register-app-pipeline:latest --no-progress --scanners vuln  --exit-code 0 --severity HIGH,CRITICAL --format table')
+               }
+           }
+       }
     }
 }
  
